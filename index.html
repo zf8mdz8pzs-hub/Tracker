@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Progreso">
+<meta name="theme-color" content="#101418">
+<title>Progreso</title>
+<style>
+  :root {
+    --fondo: #f4f6f8; --tarjeta: #ffffff; --texto: #14181c; --suave: #5d6873; --borde: #dfe4e9;
+    --acento: #2fae6b; --acento-texto: #ffffff; --peligro: #d64545; --aviso: #b7791f; --azul: #3b82f6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --fondo: #101418; --tarjeta: #1a2026; --texto: #eef2f5; --suave: #9aa6b2; --borde: #2a323a;
+            --acento: #3ccf80; --acento-texto: #06210f; --peligro: #ff6b6b; --aviso: #f0b84a; --azul: #6aa5ff; }
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; font: 1rem/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+         background: var(--fondo); color: var(--texto); }
+  #app { max-width: 720px; margin: 0 auto;
+         padding: calc(env(safe-area-inset-top) + 1rem) 1rem calc(env(safe-area-inset-bottom) + 5.5rem); }
+  h1 { font-size: 1.6rem; margin: 0 0 .25rem; } h2 { font-size: 1.15rem; margin: 0 0 .6rem; }
+  p { margin: .4rem 0; } .suave { color: var(--suave); } .peq { font-size: .875rem; } .centro { text-align: center; }
+  .tarjeta { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 1rem; padding: 1rem; margin: .9rem 0; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; min-height: 2.9rem;
+         padding: .6rem 1rem; border-radius: .8rem; border: 1px solid var(--borde); background: var(--tarjeta);
+         cursor: pointer; font-weight: 600; text-decoration: none; }
+  .btn.principal { background: var(--acento); color: var(--acento-texto); border-color: transparent; }
+  .btn.grande { width: 100%; min-height: 3.8rem; font-size: 1.2rem; border-radius: 1.1rem; }
+  .btn.hecho { background: transparent; color: var(--acento); border: 2px solid var(--acento); }
+  .btn.peligro { color: var(--peligro); border-color: var(--peligro); background: transparent; }
+  .btn.enlace { border: none; background: none; color: var(--azul); min-height: 2.2rem; padding: .3rem .4rem; font-weight: 500; }
+  .btn:disabled { opacity: .45; cursor: default; }
+  .fila { display: flex; gap: .6rem; flex-wrap: wrap; align-items: center; }
+  .fila > .crece { flex: 1 1 8rem; }
+  label { display: block; font-weight: 600; margin: .8rem 0 .3rem; }
+  input[type=text], input[type=date], input[type=time], select, textarea {
+    width: 100%; min-height: 2.8rem; padding: .5rem .7rem; border-radius: .7rem; border: 1px solid var(--borde);
+    background: var(--fondo); }
+  input[type=range] { width: 100%; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: .6rem; }
+  .stat { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 1rem; padding: .7rem .4rem; text-align: center; }
+  .stat b { display: block; font-size: 1.7rem; line-height: 1.1; }
+  .stat span { font-size: .8rem; color: var(--suave); }
+  .aviso { border-left: 4px solid var(--aviso); } .aviso.rojo { border-left-color: var(--peligro); } .aviso.verde { border-left-color: var(--acento); }
+  .barra { height: .5rem; background: var(--borde); border-radius: 1rem; overflow: hidden; }
+  .barra > i { display: block; height: 100%; background: var(--acento); border-radius: 1rem; }
+  /* Pestañas inferiores */
+  nav#tabs { position: fixed; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-around;
+             background: var(--tarjeta); border-top: 1px solid var(--borde); padding: .35rem 0 calc(env(safe-area-inset-bottom) + .35rem); z-index: 5; }
+  nav#tabs button { flex: 1; border: 0; background: none; padding: .35rem 0; font-size: .75rem; color: var(--suave); cursor: pointer; }
+  nav#tabs button b { display: block; font-size: 1.35rem; font-weight: 400; }
+  nav#tabs button.activa { color: var(--acento); font-weight: 700; }
+  /* Mascota */
+  .mascota { display: block; margin: 0 auto; width: min(62vw, 46vh, 300px); }
+  .mascota svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .m-cuerpo { transform-origin: 50% 93%; animation: respira 3.2s ease-in-out infinite; }
+  .mascota.triste .m-cuerpo { animation-duration: 5s; }
+  .m-ojo { transform-box: fill-box; transform-origin: center; animation: parpadea 4.6s infinite; }
+  .m-brillo { animation: titila 1.8s ease-in-out infinite; }
+  .m-aura { animation: titila 3s ease-in-out infinite; }
+  .mascota.salta { animation: salta .7s cubic-bezier(.3,.7,.4,1) 3; }
+  @keyframes respira { 0%,100% { transform: scale(1,1); } 50% { transform: scale(1.025,.975); } }
+  @keyframes parpadea { 0%,93%,100% { transform: scaleY(1); } 96% { transform: scaleY(.08); } }
+  @keyframes titila { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+  @keyframes salta { 0%,100% { transform: translateY(0) scale(1,1); } 15% { transform: translateY(0) scale(1.06,.9); }
+                     50% { transform: translateY(-16%) scale(.97,1.05); } 85% { transform: translateY(0) scale(1.04,.94); } }
+  @media (prefers-reduced-motion: reduce) { .m-cuerpo, .m-ojo, .m-brillo, .m-aura, .mascota.salta { animation: none !important; } }
+  @media (orientation: landscape) and (max-height: 520px) {
+    .inicio-cols { display: grid; grid-template-columns: 1fr 1.2fr; gap: 1rem; align-items: center; }
+  }
+  /* Calendario */
+  .cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: .3rem; text-align: center; }
+  .cal .cab { font-size: .75rem; color: var(--suave); font-weight: 600; }
+  .cal .dia { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+              border-radius: .7rem; font-size: .9rem; border: 1px solid transparent; }
+  .cal .dia small { font-size: .7rem; line-height: 1; height: .8rem; }
+  .cal .hecho { background: color-mix(in srgb, var(--acento) 22%, transparent); font-weight: 700; }
+  .cal .gracia { background: color-mix(in srgb, var(--azul) 20%, transparent); }
+  .cal .fallo { color: var(--peligro); }
+  .cal .hoy { border-color: var(--texto); }
+  .cal .fin { border-color: var(--aviso); border-style: dashed; }
+  /* Galería */
+  .rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr)); gap: .4rem; }
+  .rejilla figure { margin: 0; } .rejilla img { width: 100%; aspect-ratio: 3/4; object-fit: cover; border-radius: .6rem; display: block; }
+  .rejilla .mascota { width: 100%; }
+  .rejilla figcaption { font-size: .72rem; color: var(--suave); text-align: center; }
+  .visor { position: relative; width: 100%; max-height: 70vh; aspect-ratio: 3/4; margin: 0 auto; border-radius: 1rem; overflow: hidden; background: #000; }
+  .visor img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+  .visor .etq { position: absolute; top: .5rem; padding: .15rem .5rem; border-radius: .5rem; background: rgba(0,0,0,.6); color: #fff; font-size: .75rem; }
+  .visor .linea { position: absolute; top: 0; bottom: 0; width: 2px; background: #fff; box-shadow: 0 0 4px #000; }
+  /* Cámara y celebración */
+  .capa { position: fixed; inset: 0; z-index: 20; display: none; }
+  .capa.visible { display: flex; }
+  #camara { background: #000; color: #fff; flex-direction: column; }
+  #cam-zona { position: relative; flex: 1; overflow: hidden; }
+  #cam-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  #cam-video.espejo { transform: scaleX(-1); }
+  #cam-zona svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  #cam-cuenta { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+                font-size: 9rem; font-weight: 800; text-shadow: 0 0 20px #000; pointer-events: none; }
+  #cam-msg { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center;
+             gap: 1rem; padding: 2rem; text-align: center; background: #000; }
+  #cam-arriba, #cam-abajo { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .6rem .8rem; }
+  #cam-arriba { padding-top: calc(env(safe-area-inset-top) + .6rem); }
+  #cam-abajo { padding-bottom: calc(env(safe-area-inset-bottom) + .9rem); justify-content: space-around; }
+  .cbtn { min-width: 2.9rem; min-height: 2.9rem; padding: .3rem .7rem; border-radius: 2rem; border: 1px solid rgba(255,255,255,.35);
+          background: rgba(255,255,255,.12); color: #fff; cursor: pointer; font-weight: 600; }
+  .cbtn.on { background: #fff; color: #000; }
+  #cam-disparo { width: 4.6rem; height: 4.6rem; border-radius: 50%; border: .3rem solid #fff; background: #fff;
+                 box-shadow: inset 0 0 0 .2rem #000; cursor: pointer; }
+  #cam-disparo:disabled { opacity: .4; }
+  @media (orientation: landscape) { #camara { flex-direction: row; } #cam-arriba, #cam-abajo { flex-direction: column; padding: .6rem; } }
+  #fiesta { background: var(--fondo); flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem; text-align: center; gap: .6rem; }
+  /* Emergencia */
+  #pulsar { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: none; position: relative; overflow: hidden; }
+  #pulsar i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: color-mix(in srgb, var(--peligro) 30%, transparent); }
+  #pulsar span { position: relative; }
+  table { width: 100%; border-collapse: collapse; font-size: .82rem; } td { padding: .3rem .2rem; border-top: 1px solid var(--borde); vertical-align: top; }
+  .ok { color: var(--acento); } .mal { color: var(--peligro); }
+</style>
+</head>
+<body>
+<main id="app"></main>
+<nav id="tabs"></nav>
+
+<!-- Cámara: se construye una vez para no recrear el <video> en cada repintado -->
+<div id="camara" class="capa" role="dialog" aria-modal="true">
+  <div id="cam-arriba">
+    <button class="cbtn" data-a="camCerrar" id="cam-cerrar">✕</button>
+    <button class="cbtn" data-a="camTemporizador" id="cam-temp">⏱ 0s</button>
+    <button class="cbtn" data-a="camCuadricula" id="cam-cuad">#</button>
+    <button class="cbtn" data-a="camSilueta" id="cam-sil">🧍</button>
+  </div>
+  <div id="cam-zona">
+    <video id="cam-video" playsinline muted autoplay></video>
+    <!-- Cuadrícula de tercios -->
+    <svg id="cam-rejilla" viewBox="0 0 90 120" preserveAspectRatio="none">
+      <path d="M30,0V120M60,0V120M0,40H90M0,80H90" stroke="rgba(255,255,255,.45)" stroke-width=".3" fill="none"/>
+      <path d="M45,0V120" stroke="rgba(255,255,255,.25)" stroke-width=".2" stroke-dasharray="1.5 1.5" fill="none"/>
+    </svg>
+    <!-- Silueta guía: cabeza, hombros, torso y piernas -->
+    <svg id="cam-silueta" viewBox="0 0 90 120" preserveAspectRatio="xMidYMid meet">
+      <g fill="none" stroke="rgba(255,255,255,.75)" stroke-width=".7" stroke-dasharray="2.2 1.6" stroke-linejoin="round">
+        <ellipse cx="45" cy="17" rx="7" ry="8.5"/>
+        <path d="M41,25 L41,29 C34,30 27,32 26,38 L22,64 L27,65 L31,45 L32,66 L31,112 L42,112 L45,74 L48,112 L59,112 L58,66 L59,45 L63,65 L68,64 L64,38 C63,32 56,30 49,29 L49,25"/>
+      </g>
+    </svg>
+    <div id="cam-cuenta"></div>
+    <div id="cam-msg"></div>
+  </div>
+  <div id="cam-abajo">
+    <button class="cbtn" data-a="camGirar" id="cam-girar">🔄</button>
+    <button id="cam-disparo" data-a="camDisparar" aria-label="Disparar"></button>
+    <span style="min-width:2.9rem"></span>
+  </div>
+  <input type="file" id="cam-archivo" accept="image/*" capture="user" hidden>
+</div>
+
+<!-- Confirmación tras la foto: solo la mascota celebrando, nunca la foto -->
+<div id="fiesta" class="capa" role="dialog" aria-modal="true"></div>
+
+<!-- ======================================================================
+     LÓGICA PURA (sin DOM): reglas, rachas, etapas y bloqueo.
+     ====================================================================== -->
+<script id="logica">
+'use strict';
+
+// ---------------------------------------------------------------------
+//  REGLAS — ÚNICO SITIO DONDE CAMBIAR EL COMPORTAMIENTO
+// ---------------------------------------------------------------------
+const REGLAS = {
+  // Racha mínima para cada etapa visual (índice = etapa). Entre 6 y 8 etapas.
+  umbralesEtapas: [0, 1, 3, 7, 14, 30, 60, 100],
+  etapasQueBajaUnFallo: 1,            // un fallo aislado baja 1 etapa visual (la racha se conserva)
+  fallosSeguidosParaReiniciar: 2,     // dos fallos seguidos ponen la racha a cero
+  diasSeguidosParaRecuperarEtapa: 3,  // días seguidos con foto para recuperar una etapa perdida
+  diasDeGraciaPorSemana: 1,           // semana de lunes a domingo
+  diaDeGraciaSumaRacha: false,        // el día de gracia protege la racha pero no suma
+  diasAtrasParaGracia: 1,             // se puede aplicar a hoy (0) o a ayer (1)
+  emergencia: {
+    segundosPulsacion: 10,
+    horasDeEspera: 24,
+    fraseES: 'Quiero ver mis fotos antes de tiempo',
+    fraseEN: 'I want to see my photos early'
+  },
+  temporizadores: [0, 5, 10],
+  semanasPorDefecto: 12,
+  nombreMascota: 'Brote',
+  calidadJPEG: 0.9
+};
+
+const Logica = {
+  // --- Días naturales: clave AAAAMMDD y ordinal (días desde 1970) ---
+  claveDeFecha(d) { return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); }, // hora LOCAL del dispositivo
+  ordinal(clave) {
+    return Math.round(Date.UTC(Math.floor(clave / 10000), Math.floor(clave / 100) % 100 - 1, clave % 100) / 86400000);
+  },
+  claveDeOrdinal(o) {
+    const d = new Date(o * 86400000);
+    return d.getUTCFullYear() * 10000 + (d.getUTCMonth() + 1) * 100 + d.getUTCDate();
+  },
+  sumar(clave, n) { return this.claveDeOrdinal(this.ordinal(clave) + n); },
+  diasEntre(a, b) { return this.ordinal(b) - this.ordinal(a); },
+  semana(clave) { return Math.floor((this.ordinal(clave) + 3) / 7); },          // 1970-01-05 fue lunes
+  diaSemanaLunes0(clave) { return ((this.ordinal(clave) + 3) % 7 + 7) % 7; },
+
+  // --- Racha ---
+  // Recorre el historial día a día. Hoy sin foto todavía NO es un fallo (el día sigue abierto).
+  calcularRacha(fotos, gracias, hoy, reglas = REGLAS) {
+    const F = new Set(fotos.filter(c => c <= hoy)), G = new Set(gracias.filter(c => c <= hoy));
+    const e = { rachaActual: 0, mejorRacha: 0, penalizacionEtapas: 0, fallosSeguidos: 0,
+                hechoHoy: F.has(hoy), graciaHoy: false, totalFotos: F.size, hoyCubierto: false };
+    e.graciaHoy = !e.hechoHoy && G.has(hoy);
+    e.hoyCubierto = e.hechoHoy || e.graciaHoy;
+    const todos = [...F, ...G];
+    if (!todos.length) return e;
+    const oHoy = this.ordinal(hoy);
+    let seguidos = 0;
+    for (let o = this.ordinal(Math.min(...todos)); o <= oHoy; o++) {
+      const c = this.claveDeOrdinal(o);
+      if (F.has(c)) {
+        e.rachaActual++; e.fallosSeguidos = 0; seguidos++;
+        if (e.penalizacionEtapas > 0 && seguidos >= reglas.diasSeguidosParaRecuperarEtapa) { e.penalizacionEtapas--; seguidos = 0; }
+        e.mejorRacha = Math.max(e.mejorRacha, e.rachaActual);
+      } else if (G.has(c)) {
+        e.fallosSeguidos = 0;
+        if (reglas.diaDeGraciaSumaRacha) { e.rachaActual++; e.mejorRacha = Math.max(e.mejorRacha, e.rachaActual); }
+      } else if (o === oHoy) {
+        break;
+      } else {
+        e.fallosSeguidos++; seguidos = 0;
+        if (e.fallosSeguidos >= reglas.fallosSeguidosParaReiniciar) { e.rachaActual = 0; e.penalizacionEtapas = 0; }
+        else if (e.rachaActual > 0) {
+          e.penalizacionEtapas = Math.min(e.penalizacionEtapas + reglas.etapasQueBajaUnFallo, reglas.umbralesEtapas.length - 1);
+        }
+      }
+    }
+    return e;
+  },
+  // Qué se pierde si hoy acaba sin foto: 'ninguno' | 'bajaEtapa' | 'pierdeRacha'
+  riesgoSiFallaHoy(e, reglas = REGLAS) {
+    if (e.hoyCubierto || e.rachaActual <= 0) return 'ninguno';
+    return e.fallosSeguidos + 1 >= reglas.fallosSeguidosParaReiniciar ? 'pierdeRacha' : 'bajaEtapa';
+  },
+  graciasDisponibles(clave, gracias, reglas = REGLAS) {
+    const s = this.semana(clave);
+    return Math.max(0, reglas.diasDeGraciaPorSemana - gracias.filter(g => this.semana(g) === s).length);
+  },
+  puedeUsarGracia(clave, fotos, gracias, hoy, reglas = REGLAS) {
+    const antig = this.diasEntre(clave, hoy);
+    if (antig < 0 || antig > reglas.diasAtrasParaGracia) return false;
+    if (fotos.includes(clave) || gracias.includes(clave)) return false;
+    return this.graciasDisponibles(clave, gracias, reglas) > 0;
+  },
+
+  // --- Etapas de la mascota ---
+  etapaBase(racha, reglas = REGLAS) {
+    let etapa = 0;
+    reglas.umbralesEtapas.forEach((u, i) => { if (racha >= u) etapa = i; });
+    return etapa;
+  },
+  etapaVisible(e, reglas = REGLAS) { return Math.max(0, this.etapaBase(e.rachaActual, reglas) - e.penalizacionEtapas); },
+  diasParaSiguienteEtapa(racha, reglas = REGLAS) {
+    const sig = this.etapaBase(racha, reglas) + 1;
+    return sig < reglas.umbralesEtapas.length ? reglas.umbralesEtapas[sig] - racha : null;
+  },
+
+  // --- Bloqueo de fotos ---
+  // datos: { finClave, cumplido, solicitudEmergencia (ms o null), emergenciaConfirmada }
+  estadoBloqueo(datos, ahoraMs, hoyClave, reglas = REGLAS) {
+    if (!datos) return { tipo: 'bloqueado', desbloqueado: false };
+    if (datos.cumplido) return { tipo: 'desbloqueado', desbloqueado: true, porEmergencia: false };
+    if (datos.emergenciaConfirmada) return { tipo: 'desbloqueado', desbloqueado: true, porEmergencia: true };
+    if (hoyClave >= datos.finClave) return { tipo: 'pendiente', desbloqueado: false };
+    if (datos.solicitudEmergencia) {
+      const disponibleEl = datos.solicitudEmergencia + reglas.emergencia.horasDeEspera * 3600000;
+      return { tipo: ahoraMs >= disponibleEl ? 'lista' : 'espera', desbloqueado: false, disponibleEl };
+    }
+    return { tipo: 'bloqueado', desbloqueado: false };
+  },
+  fraseValida(texto, frase) {
+    const n = s => s.toLowerCase().trim().split(/\s+/).join(' ');
+    return frase.length > 0 && n(texto) === n(frase);
+  }
+};
+</script>
+
+<!-- ======================================================================
+     PRUEBAS UNITARIAS (abre la página con #tests para ejecutarlas)
+     ====================================================================== -->
+<script id="pruebas">
+'use strict';
+function ejecutarPruebas() {
+  const res = [];
+  const igual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  const prueba = (nombre, fn) => { try { fn(); res.push({ nombre, ok: true }); } catch (e) { res.push({ nombre, ok: false, error: String(e.message || e) }); } };
+  const eq = (a, b, m = '') => { if (!igual(a, b)) throw new Error(`${m} esperado ${JSON.stringify(b)}, obtenido ${JSON.stringify(a)}`); };
+  const L0 = 20261102;                                  // lunes 2 de noviembre de 2026
+  const d = arr => arr.map(n => Logica.sumar(L0, n));
+  const calc = (fotos, hoy, gracia = [], reglas = REGLAS) => Logica.calcularRacha(d(fotos), d(gracia), Logica.sumar(L0, hoy), reglas);
+
+  // --- Días ---
+  prueba('aritmética de días', () => {
+    eq(Logica.ordinal(19700101), 0);
+    eq(Logica.sumar(20261231, 1), 20270101);
+    eq(Logica.sumar(20280228, 1), 20280229);
+    eq(Logica.sumar(20270228, 1), 20270301);
+    eq(Logica.diasEntre(L0, 20270203), 93);
+    eq(Logica.sumar(20261025, 1), 20261026, 'cambio de hora');
+  });
+  prueba('semana de lunes a domingo', () => {
+    eq(Logica.diaSemanaLunes0(L0), 0);
+    eq(Logica.semana(L0), Logica.semana(Logica.sumar(L0, 6)));
+    eq(Logica.semana(L0) !== Logica.semana(Logica.sumar(L0, 7)), true);
+    eq(Logica.semana(L0) !== Logica.semana(Logica.sumar(L0, -1)), true);
+  });
+  // --- Racha ---
+  prueba('sin fotos la racha es cero', () => { const e = calc([], 0); eq(e.rachaActual, 0); eq(e.mejorRacha, 0); });
+  prueba('días seguidos suman', () => { const e = calc([0, 1, 2, 3], 3); eq(e.rachaActual, 4); eq(e.hechoHoy, true); eq(e.totalFotos, 4); });
+  prueba('hoy sin foto todavía no es fallo', () => { const e = calc([0, 1, 2], 3); eq(e.rachaActual, 3); eq(e.fallosSeguidos, 0); eq(e.penalizacionEtapas, 0); });
+  prueba('repetir foto el mismo día no cuenta doble', () => { const e = Logica.calcularRacha([L0, L0], [], L0); eq(e.rachaActual, 1); eq(e.totalFotos, 1); });
+  prueba('un fallo baja una etapa sin perder la racha', () => {
+    const e = calc([0, 1, 2, 3, 4], 6); eq(e.rachaActual, 5); eq(e.penalizacionEtapas, 1);
+    eq(Logica.etapaVisible(e), Logica.etapaBase(5) - 1);
+  });
+  prueba('dos fallos seguidos reinician la racha', () => { const e = calc([0, 1, 2, 3, 4], 7); eq(e.rachaActual, 0); eq(e.penalizacionEtapas, 0); eq(e.mejorRacha, 5); });
+  prueba('tras un fallo la racha continúa', () => { const e = calc([0, 1, 2, 3, 4, 6, 7], 7); eq(e.rachaActual, 7); eq(e.penalizacionEtapas, 1); });
+  prueba('la etapa se recupera tras tres días seguidos', () => { const e = calc([0, 1, 2, 3, 4, 6, 7, 8], 8); eq(e.rachaActual, 8); eq(e.penalizacionEtapas, 0); });
+  prueba('fallos alternos acumulan penalización', () => { const e = calc([0, 1, 2, 4, 6], 6); eq(e.rachaActual, 5); eq(e.penalizacionEtapas, 2); });
+  prueba('nueva racha tras reinicio', () => { const e = calc([0, 1, 2, 5, 6], 6); eq(e.rachaActual, 2); eq(e.mejorRacha, 3); });
+  prueba('las reglas se pueden cambiar', () => {
+    const e = calc([0, 1, 2, 3, 4], 7, [], { ...REGLAS, fallosSeguidosParaReiniciar: 3 }); eq(e.rachaActual, 5); eq(e.penalizacionEtapas, 2);
+  });
+  // --- Gracia ---
+  prueba('el día de gracia protege sin sumar', () => { const e = calc([0, 1, 2, 4], 4, [3]); eq(e.rachaActual, 4); eq(e.penalizacionEtapas, 0); });
+  prueba('la gracia evita el reinicio', () => { const e = calc([0, 1, 2, 3, 4], 7, [5]); eq(e.rachaActual, 5); eq(e.penalizacionEtapas, 1); });
+  prueba('gracia hoy cubre el día', () => { const e = calc([0, 1], 2, [2]); eq(e.graciaHoy, true); eq(Logica.riesgoSiFallaHoy(e), 'ninguno'); });
+  prueba('solo un día de gracia por semana', () => {
+    const fotos = d([0, 1]), hoy = Logica.sumar(L0, 3);
+    eq(Logica.puedeUsarGracia(Logica.sumar(L0, 2), fotos, [], hoy), true);
+    eq(Logica.puedeUsarGracia(hoy, fotos, [], hoy), true);
+    eq(Logica.puedeUsarGracia(hoy, fotos, d([2]), hoy), false);
+    const sig = Logica.sumar(L0, 7);
+    eq(Logica.puedeUsarGracia(sig, fotos, d([2]), sig), true);
+  });
+  prueba('no hay gracia con foto, ni lejana, ni futura', () => {
+    const fotos = d([0, 3]), hoy = Logica.sumar(L0, 3);
+    eq(Logica.puedeUsarGracia(hoy, fotos, [], hoy), false);
+    eq(Logica.puedeUsarGracia(Logica.sumar(L0, 1), fotos, [], hoy), false);
+    eq(Logica.puedeUsarGracia(Logica.sumar(L0, 4), fotos, [], hoy), false);
+  });
+  prueba('riesgo según la situación', () => {
+    eq(Logica.riesgoSiFallaHoy(calc([], 0)), 'ninguno');
+    eq(Logica.riesgoSiFallaHoy(calc([0, 1], 2)), 'bajaEtapa');
+    eq(Logica.riesgoSiFallaHoy(calc([0, 1], 3)), 'pierdeRacha');
+    eq(Logica.riesgoSiFallaHoy(calc([0, 1, 2], 2)), 'ninguno');
+  });
+  // --- Etapas ---
+  prueba('hay entre 6 y 8 etapas', () => { const n = REGLAS.umbralesEtapas.length; eq(n >= 6 && n <= 8, true); eq(REGLAS.umbralesEtapas[0], 0); });
+  prueba('etapa según la racha', () => {
+    [[0, 0], [1, 1], [2, 1], [3, 2], [6, 2], [7, 3], [13, 3], [14, 4], [29, 4], [30, 5], [59, 5], [60, 6], [99, 6], [100, 7], [365, 7]]
+      .forEach(([r, et]) => eq(Logica.etapaBase(r), et, `racha ${r}:`));
+  });
+  prueba('la penalización baja la etapa visible y nunca es negativa', () => {
+    eq(Logica.etapaVisible({ rachaActual: 20, penalizacionEtapas: 1 }), 3);
+    eq(Logica.etapaVisible({ rachaActual: 1, penalizacionEtapas: 5 }), 0);
+  });
+  prueba('días para la siguiente etapa', () => {
+    eq(Logica.diasParaSiguienteEtapa(0), 1); eq(Logica.diasParaSiguienteEtapa(5), 2); eq(Logica.diasParaSiguienteEtapa(100), null);
+  });
+  // --- Bloqueo ---
+  const fin = 20270203, H = 3600000, t0 = Date.UTC(2026, 10, 11, 12);
+  prueba('bloqueado mientras el objetivo está en curso', () => {
+    eq(Logica.estadoBloqueo({ finClave: fin }, t0, 20261111).desbloqueado, false);
+    eq(Logica.estadoBloqueo({ finClave: fin }, t0, 20270202).tipo, 'bloqueado');
+  });
+  prueba('al llegar la fecha se pregunta pero sigue bloqueado', () => {
+    const b = Logica.estadoBloqueo({ finClave: fin }, t0, fin); eq(b.tipo, 'pendiente'); eq(b.desbloqueado, false);
+    eq(Logica.estadoBloqueo({ finClave: fin }, t0, 20270501).desbloqueado, false);
+  });
+  prueba('confirmar el objetivo desbloquea', () => { eq(Logica.estadoBloqueo({ finClave: fin, cumplido: true }, t0, fin).desbloqueado, true); });
+  prueba('ampliar el plazo vuelve a bloquear', () => { eq(Logica.estadoBloqueo({ finClave: 20270217 }, t0, 20270204).tipo, 'bloqueado'); });
+  prueba('la emergencia exige esperar 24 horas y confirmar', () => {
+    const datos = { finClave: fin, solicitudEmergencia: t0 };
+    eq(Logica.estadoBloqueo(datos, t0, 20261111).tipo, 'espera');
+    eq(Logica.estadoBloqueo(datos, t0 + 23.9 * H, 20261112).tipo, 'espera');
+    const lista = Logica.estadoBloqueo(datos, t0 + 24 * H, 20261112);
+    eq(lista.tipo, 'lista'); eq(lista.desbloqueado, false);
+    const fin2 = Logica.estadoBloqueo({ ...datos, emergenciaConfirmada: true }, t0 + 24 * H, 20261112);
+    eq(fin2.desbloqueado, true); eq(fin2.porEmergencia, true);
+  });
+  prueba('cancelar la emergencia vuelve a bloquear', () => {
+    eq(Logica.estadoBloqueo({ finClave: fin, solicitudEmergencia: null }, t0 + 48 * H, 20261113).tipo, 'bloqueado');
+  });
+  prueba('frase de confirmación', () => {
+    const f = REGLAS.emergencia.fraseES;
+    eq(Logica.fraseValida('  quiero ver mis fotos   antes de tiempo ', f), true);
+    eq(Logica.fraseValida('quiero ver mis fotos', f), false);
+    eq(Logica.fraseValida('', ''), false);
+  });
+  return res;
+}
+</script>
+
+<!-- ======================================================================
+     APLICACIÓN: almacenamiento, mascota, cámara y pantallas
+     ====================================================================== -->
+<script id="aplicacion">
+'use strict';
+(() => {
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+// ---------------------------------------------------------------------
+//  Estado en memoria
+// ---------------------------------------------------------------------
+const S = {
+  vista: 'inicio', objetivo: null, fotos: [], gracias: [], auditoria: [],
+  ajustes: { idioma: 'es', horaPrincipal: '09:00', horaNoche: '21:30', nocheActiva: true, camara: 'user', temporizador: 0, cuadricula: true, silueta: true },
+  onb: { paso: 1 }, cal: null, gal: { modo: 'rejilla', i: 0, corte: 50, urls: null }, emg: { paso: 0 }, ampliar: false
+};
+// Textos en los dos idiomas juntos: es imposible que falte una traducción.
+const L = (es, en) => S.ajustes.idioma === 'en' ? en : es;
+const locale = () => S.ajustes.idioma === 'en' ? 'en-US' : 'es-ES';
+const hoy = () => Logica.claveDeFecha(new Date());
+const fechaDe = c => new Date(Math.floor(c / 10000), Math.floor(c / 100) % 100 - 1, c % 100);
+const fmt = (c, o = { day: 'numeric', month: 'long', year: 'numeric' }) => fechaDe(c).toLocaleDateString(locale(), o);
+const claveDeInput = v => Number(v.replaceAll('-', ''));
+const inputDeClave = c => `${Math.floor(c / 10000)}-${String(Math.floor(c / 100) % 100).padStart(2, '0')}-${String(c % 100).padStart(2, '0')}`;
+const racha = () => Logica.calcularRacha(S.fotos, S.gracias, hoy());
+const bloqueo = () => Logica.estadoBloqueo(S.objetivo, Date.now(), hoy());
+
+// ---------------------------------------------------------------------
+//  Almacenamiento: IndexedDB local del navegador. Nada sale del dispositivo.
+//  Las fotos se guardan cifradas (AES-GCM) con una clave no exportable.
+// ---------------------------------------------------------------------
+const BD = {
+  bd: null,
+  abrir() {
+    return new Promise((ok, mal) => {
+      const r = indexedDB.open('progreso', 1);
+      r.onupgradeneeded = () => { r.result.createObjectStore('kv'); r.result.createObjectStore('fotos'); };
+      r.onsuccess = () => { this.bd = r.result; ok(); };
+      r.onerror = () => mal(r.error);
+    });
+  },
+  _op(almacen, modo, fn) {
+    return new Promise((ok, mal) => {
+      const tx = this.bd.transaction(almacen, modo); const r = fn(tx.objectStore(almacen));
+      tx.oncomplete = () => ok(r && r.result); tx.onerror = tx.onabort = () => mal(tx.error);
+    });
+  },
+  get(k) { return this._op('kv', 'readonly', s => s.get(k)); },
+  set(k, v) { return this._op('kv', 'readwrite', s => s.put(v, k)); },
+  clavesFotos() { return this._op('fotos', 'readonly', s => s.getAllKeys()); },
+  async _clave() {
+    if (!(window.crypto && crypto.subtle)) return null;       // sin contexto seguro no hay cifrado
+    let k = await this.get('claveCifrado');
+    if (!k) {
+      k = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+      await this.set('claveCifrado', k);
+    }
+    return k;
+  },
+  // Guarda la foto del día. Misma clave de día = sustituye a la anterior.
+  async guardarFoto(clave, blob) {
+    const datos = await blob.arrayBuffer(); const k = await this._clave();
+    let reg;
+    if (k) {
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      reg = { cifrado: true, iv, datos: await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, k, datos), tipo: blob.type, t: Date.now() };
+    } else reg = { cifrado: false, datos, tipo: blob.type, t: Date.now() };
+    await this._op('fotos', 'readwrite', s => s.put(reg, clave));
+  },
+  // ÚNICO punto de lectura de fotos: se niega si el bloqueo no está levantado.
+  async leerFoto(clave) {
+    if (!bloqueo().desbloqueado) throw new Error('Fotos bloqueadas');
+    const reg = await this._op('fotos', 'readonly', s => s.get(clave));
+    if (!reg) return null;
+    const datos = reg.cifrado ? await crypto.subtle.decrypt({ name: 'AES-GCM', iv: reg.iv }, await this._clave(), reg.datos) : reg.datos;
+    return new Blob([datos], { type: reg.tipo || 'image/jpeg' });
+  },
+  borrarTodo() {
+    this.bd.close();
+    return new Promise(ok => { const r = indexedDB.deleteDatabase('progreso'); r.onsuccess = r.onerror = r.onblocked = () => ok(); });
+  }
+};
+const guardar = () => Promise.all([BD.set('objetivo', S.objetivo), BD.set('gracias', S.gracias), BD.set('auditoria', S.auditoria), BD.set('ajustes', S.ajustes)]);
+const auditar = (tipo, detalle = '') => { S.auditoria.push({ t: Date.now(), tipo, detalle }); };
+
+// ---------------------------------------------------------------------
+//  Mascota "Brote": criatura original dibujada con SVG, 8 etapas.
+// ---------------------------------------------------------------------
+let nMascota = 0;
+const NOMBRES_ETAPA = () => [L('Dormilón', 'Sleepyhead'), L('Despierto', 'Awake'), L('Animado', 'Lively'), L('En forma', 'In shape'),
+                             L('Fuerte', 'Strong'), L('Atleta', 'Athlete'), L('Campeón', 'Champion'), L('Leyenda', 'Legend')];
+function mascota(etapa, clase = '') {
+  const e = Math.max(0, Math.min(7, etapa)), id = 'm' + (++nMascota);
+  const [c1, c2, c3] = [['#9aa3ad', '#7b848e', '#c9ced3'], ['#8fd0c8', '#6fb3ab', '#d6f1ed'], ['#5ccfae', '#3fae8e', '#cdf3e7'],
+    ['#4cc777', '#35a35c', '#ccf1d8'], ['#f5a742', '#d98a25', '#fde4bd'], ['#f47a62', '#d65a43', '#fdd6cd'],
+    ['#a078f5', '#7f56d9', '#e4d9fd'], ['#f7c93b', '#e0a81c', '#fff3c2']][e];
+  const k = [0.64, 0.7, 0.77, 0.83, 0.88, 0.92, 0.96, 1][e];
+  const cuerpo = 'M -50,-10 C -62,-60 -45,-110 0,-110 C 45,-110 62,-60 50,-10 C 40,2 -40,2 -50,-10 Z';
+  const estrella = (x, y, r, color, retraso) =>
+    `<path class="m-brillo" style="animation-delay:${retraso}s" fill="${color}" d="M${x},${y - r} Q${x},${y} ${x + r},${y} Q${x},${y} ${x},${y + r} Q${x},${y} ${x - r},${y} Q${x},${y} ${x},${y - r}Z"/>`;
+  let fondo = '', g = '', frente = '';
+
+  // Aura y rayos (etapas altas)
+  if (e >= 5) fondo += `<circle class="m-aura" cx="100" cy="104" r="${[0, 0, 0, 0, 0, 78, 88, 97][e]}" fill="url(#${id}a)"/>`;
+  if (e >= 7) {
+    let rayos = '';
+    for (let i = 0; i < 12; i++) rayos += `<rect x="98" y="2" width="4" height="${i % 2 ? 16 : 26}" rx="2" fill="#f7c93b" opacity=".75" transform="rotate(${i * 30} 100 104)"/>`;
+    fondo += `<g>${rayos}<animateTransform attributeName="transform" type="rotate" from="0 100 104" to="360 100 104" dur="24s" repeatCount="indefinite"/></g>`;
+  }
+  // Nube de lluvia (etapa 0)
+  if (e === 0) fondo += `<g fill="#b4bcc4"><circle cx="46" cy="44" r="12"/><circle cx="62" cy="38" r="15"/><circle cx="78" cy="45" r="11"/><rect x="38" y="44" width="48" height="12" rx="6"/></g>
+    <g class="m-brillo" stroke="#7ea6c9" stroke-width="2.5" stroke-linecap="round"><path d="M50,62 l-3,8 M63,62 l-3,8 M76,62 l-3,8"/></g>`;
+
+  // Capa (etapas 6-7)
+  if (e >= 6) g += `<path d="M -38,-92 C -80,-58 -84,-18 -74,2 L 74,2 C 84,-18 80,-58 38,-92 Z" fill="${e === 7 ? '#8e2f6b' : '#d64545'}"/>
+    <path d="M -74,2 C -84,-18 -80,-58 -38,-92" fill="none" stroke="${e === 7 ? '#f7c93b' : '#a83232'}" stroke-width="3"/>
+    <path d="M 74,2 C 84,-18 80,-58 38,-92" fill="none" stroke="${e === 7 ? '#f7c93b' : '#a83232'}" stroke-width="3"/>`;
+  // Pies
+  g += `<ellipse cx="-22" cy="-3" rx="15" ry="7" fill="${c2}"/><ellipse cx="22" cy="-3" rx="15" ry="7" fill="${c2}"/>`;
+  // Brazos: pequeños (2-3) o fuertes y en alto (4+)
+  if (e === 2 || e === 3) g += `<ellipse cx="-55" cy="-44" rx="8" ry="15" fill="${c2}" transform="rotate(22 -55 -44)"/><ellipse cx="55" cy="-44" rx="8" ry="15" fill="${c2}" transform="rotate(-22 55 -44)"/>`;
+  if (e >= 4) {
+    const w = e >= 6 ? 15 : 13;
+    [-1, 1].forEach(s => { g += `<path d="M ${s * 48},-58 L ${s * 72},-74 L ${s * 68},-102" fill="none" stroke="${c2}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="${s * 73}" cy="-78" r="${w - 2}" fill="${c2}"/><circle cx="${s * 68}" cy="-104" r="${w - 5}" fill="${c1}"/>`; });
+  }
+  // Cuerpo, barriga y detalles recortados al cuerpo
+  g += `<path d="${cuerpo}" fill="url(#${id}c)"/><g clip-path="url(#${id}k)"><ellipse cx="0" cy="-34" rx="29" ry="25" fill="${c3}" opacity=".85"/>`;
+  if (e >= 3 && e <= 6) g += `<path d="M -60,-90 Q 0,-106 60,-90 L 60,-79 Q 0,-95 -60,-79 Z" fill="${e >= 5 ? '#2f6fde' : '#e5484d'}"/>`;
+  if (e === 0) g += `<g transform="rotate(-25 26 -30)"><rect x="14" y="-35" width="24" height="10" rx="3" fill="#f1dcc0"/><path d="M22,-35v10M30,-35v10" stroke="#c9ad85" stroke-width="1.5"/></g>`;
+  g += '</g>';
+  if (e >= 3 && e <= 6) g += `<path d="M 46,-84 l 14,-8 l -2,9 Z M 46,-84 l 15,4 l -7,6 Z" fill="${e >= 5 ? '#2459b8' : '#b8383c'}"/>`;
+  // Brote de la cabeza: crece con las etapas; corona en la última
+  const hoja = (x, y, rx, ry, ang, color) => `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="${color}" transform="rotate(${ang} ${x} ${y})"/>`;
+  if (e === 0) g += `<path d="M0,-108 q 8,-16 22,-6" fill="none" stroke="#8a8f6a" stroke-width="4" stroke-linecap="round"/>${hoja(26, -108, 8, 4, 40, '#a39a6b')}
+    <path d="M -22,-104 l -6,-9 M -10,-109 l -2,-10 M 34,-96 l 9,-5" stroke="${c2}" stroke-width="3" stroke-linecap="round"/>`;
+  else if (e < 7) {
+    const t = [0, 10, 14, 18, 20, 22, 24][e];
+    g += `<path d="M0,-108 q -3,-${t / 2} 0,-${t}" fill="none" stroke="#3d8b40" stroke-width="4" stroke-linecap="round"/>`;
+    g += hoja(9 + e, -110 - t, 7 + e * 1.3, 4 + e * 0.6, -28, '#4caf50');
+    if (e >= 2) g += hoja(-9 - e, -110 - t, 7 + e * 1.3, 4 + e * 0.6, 28, '#66bb6a');
+    if (e >= 5) g += `<circle cx="0" cy="${-114 - t}" r="${e === 6 ? 7 : 5.5}" fill="${e === 6 ? '#ffd54a' : '#ff8fb1'}"/><circle cx="0" cy="${-114 - t}" r="2.4" fill="#fff" opacity=".8"/>`;
+  } else g += `<path d="M -26,-104 L -30,-134 L -14,-120 L 0,-140 L 14,-120 L 30,-134 L 26,-104 Z" fill="#ffd54a" stroke="#c98f0a" stroke-width="2.5" stroke-linejoin="round"/>
+    <circle cx="0" cy="-116" r="4" fill="#e5484d"/><circle cx="-16" cy="-113" r="2.6" fill="#2f6fde"/><circle cx="16" cy="-113" r="2.6" fill="#2f6fde"/>`;
+  // Mejillas
+  if (e >= 2) g += `<circle cx="-32" cy="-56" r="6.5" fill="#ff7e8a" opacity=".45"/><circle cx="32" cy="-56" r="6.5" fill="#ff7e8a" opacity=".45"/>`;
+  // Ojos (parpadean); en la etapa 0, párpados caídos
+  [-1, 1].forEach(s => {
+    const x = s * 18;
+    g += `<g class="m-ojo"><ellipse cx="${x}" cy="-68" rx="9.5" ry="${e === 0 ? 9 : 11.5}" fill="#fff"/>
+      <circle cx="${x + (e === 0 ? 0 : s * -1)}" cy="${e === 0 ? -64 : -67}" r="${e >= 6 ? 6 : 5}" fill="#1d2329"/>
+      <circle cx="${x + 2}" cy="${e === 0 ? -66 : -70}" r="${e >= 5 ? 2.4 : 1.6}" fill="#fff"/>
+      ${e >= 6 ? `<circle cx="${x - 2.5}" cy="-64.5" r="1.2" fill="#fff"/>` : ''}
+      ${e === 0 ? `<path d="M ${x - 11},-80 h 22 v 11 q -11,5 -22,0 Z" fill="${c2}"/>` : ''}</g>`;
+  });
+  // Cejas decididas (4+) o tristes (0)
+  if (e >= 4) g += `<path d="M -29,-86 L -9,-81 M 29,-86 L 9,-81" stroke="#1d2329" stroke-width="3.5" stroke-linecap="round"/>`;
+  if (e === 0) g += `<path d="M -28,-80 L -10,-86 M 28,-80 L 10,-86" stroke="#5b636b" stroke-width="3" stroke-linecap="round"/>`;
+  // Boca
+  if (e === 0) g += `<path d="M -11,-42 Q 0,-52 11,-42" fill="none" stroke="#1d2329" stroke-width="3.2" stroke-linecap="round"/>`;
+  else if (e === 1) g += `<path d="M -8,-47 Q 0,-43 8,-47" fill="none" stroke="#1d2329" stroke-width="3.2" stroke-linecap="round"/>`;
+  else if (e <= 3) g += `<path d="M -13,-50 Q 0,-37 13,-50" fill="none" stroke="#1d2329" stroke-width="3.2" stroke-linecap="round"/>`;
+  else g += `<path d="M -15,-52 Q 0,-28 15,-52 Z" fill="#1d2329" stroke="#1d2329" stroke-width="3" stroke-linejoin="round"/><ellipse cx="0" cy="-40" rx="6" ry="3.6" fill="#ff7e8a"/>`;
+  // Medalla (5+)
+  if (e >= 5) g += `<path d="M -15,-30 L 0,-12 L 15,-30" fill="none" stroke="${e >= 6 ? '#f7c93b' : '#2f6fde'}" stroke-width="4"/>
+    <circle cx="0" cy="-9" r="9.5" fill="#ffd54a" stroke="#c98f0a" stroke-width="2"/><path d="M0,-15 l1.8,3.8 4.2,.5 -3.1,2.9 .8,4.1 -3.7,-2 -3.7,2 .8,-4.1 -3.1,-2.9 4.2,-.5Z" fill="#c98f0a"/>`;
+  // Destellos
+  if (e >= 4) frente += estrella(32, 70, 6, '#ffd54a', 0) + estrella(170, 58, 7, '#ffd54a', .6);
+  if (e >= 5) frente += estrella(22, 130, 5, '#fff', 1.1) + estrella(180, 124, 6, '#fff', .3);
+  if (e >= 7) frente += estrella(100, 12, 6, '#fff', .8) + estrella(150, 24, 5, '#ffd54a', 1.4) + estrella(48, 26, 5, '#ffd54a', .2);
+
+  const nombre = NOMBRES_ETAPA()[e];
+  return `<div class="mascota ${e === 0 ? 'triste' : ''} ${clase}" role="img" aria-label="${esc(REGLAS.nombreMascota)}: ${esc(nombre)}">
+  <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><defs>
+    <radialGradient id="${id}c" cx="38%" cy="28%" r="80%"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></radialGradient>
+    <radialGradient id="${id}a"><stop offset="0" stop-color="${c1}" stop-opacity=".75"/><stop offset=".6" stop-color="${c1}" stop-opacity=".25"/><stop offset="1" stop-color="${c1}" stop-opacity="0"/></radialGradient>
+    <clipPath id="${id}k"><path d="${cuerpo}"/></clipPath></defs>
+    ${fondo}<ellipse cx="100" cy="188" rx="${46 * k}" ry="${7 * k}" fill="#000" opacity=".14"/>
+    <g class="m-cuerpo"><g transform="translate(100,186) scale(${k})">${g}</g></g>${frente}</svg></div>`;
+}
+
+// ---------------------------------------------------------------------
+//  Pantallas
+// ---------------------------------------------------------------------
+function pintar() {
+  const app = $('app'), tabs = $('tabs');
+  document.documentElement.lang = S.ajustes.idioma;
+  if (!S.objetivo) { tabs.style.display = 'none'; app.innerHTML = vistaOnboarding(); return; }
+  const b = bloqueo();
+  if (S.vista === 'galeria' && !b.desbloqueado) S.vista = 'inicio';
+  const pest = [['inicio', '🏠', L('Inicio', 'Home')], ['calendario', '📅', L('Calendario', 'Calendar')]];
+  if (b.desbloqueado) pest.push(['galeria', '🖼️', L('Galería', 'Gallery')]);
+  pest.push(['ajustes', '⚙️', L('Ajustes', 'Settings')]);
+  tabs.style.display = 'flex';
+  tabs.innerHTML = pest.map(([v, i, t]) => `<button data-a="ir" data-v="${v}" class="${S.vista === v ? 'activa' : ''}"><b>${i}</b>${t}</button>`).join('');
+  app.innerHTML = ({ inicio: vistaInicio, calendario: vistaCalendario, galeria: vistaGaleria, ajustes: vistaAjustes, emergencia: vistaEmergencia })[S.vista]();
+}
+
+function vistaOnboarding() {
+  const o = S.onb;
+  if (o.paso === 1) return `<div class="centro" style="padding-top:1rem">${mascota(2)}
+    <h1>${L('Hola, soy', 'Hi, I am')} ${REGLAS.nombreMascota}</h1>
+    <p>${L('Cada día te haces una foto. Yo la guardo y <b>no podrás verla hasta cumplir tu objetivo</b>.',
+           'Every day you take a photo. I keep it and <b>you cannot see it until you reach your goal</b>.')}</p>
+    <p>${L('Mientras tanto, yo crezco con tu racha: cuantos más días seguidos, mejor aspecto tengo.',
+           'Meanwhile I grow with your streak: the more days in a row, the better I look.')}</p></div>
+    <div class="tarjeta aviso peq"><b>${L('Antes de empezar', 'Before you start')}</b><br>
+    ${L('En el iPhone, abre esta página en Safari y pulsa <b>Compartir → Añadir a pantalla de inicio</b>. Usa siempre la app desde ese icono: los datos de Safari y los del icono son distintos, y solo los del icono se conservan a largo plazo.',
+        'On iPhone, open this page in Safari and tap <b>Share → Add to Home Screen</b>. Always use the app from that icon: Safari data and icon data are separate, and only the icon data is kept long term.')}</div>
+    <button class="btn principal grande" data-a="onbSig">${L('Empezar', 'Start')}</button>
+    <p class="centro"><button class="btn enlace" data-a="idiomaAlternar">${L('English', 'Español')}</button></p>`;
+  if (o.paso === 2) {
+    const porDefecto = Logica.sumar(hoy(), REGLAS.semanasPorDefecto * 7);
+    return `<h1>${L('Tu objetivo', 'Your goal')}</h1><p class="suave">${L('Las fotos quedarán bloqueadas hasta esta fecha.', 'Photos stay locked until this date.')}</p>
+    <div class="tarjeta"><label for="o-sem">${L('Duración', 'Duration')}</label>
+      <select id="o-sem" data-c="onbSemanas">${[4, 6, 8, 10, 12, 16, 20, 24].map(n => `<option value="${n}" ${n === (o.semanas || REGLAS.semanasPorDefecto) ? 'selected' : ''}>${n} ${L('semanas', 'weeks')}</option>`).join('')}</select>
+      <label for="o-fin">${L('Fecha de fin', 'End date')}</label>
+      <input type="date" id="o-fin" data-c="onbFin" min="${inputDeClave(Logica.sumar(hoy(), 1))}" value="${inputDeClave(o.fin || porDefecto)}">
+      <label for="o-txt">${L('Objetivo (opcional)', 'Goal (optional)')}</label>
+      <input type="text" id="o-txt" data-c="onbTexto" maxlength="120" placeholder="${L('Llegar a X kg, marcar abdominales…', 'Reach X kg, visible abs…')}" value="${esc(o.texto || '')}"></div>
+    <button class="btn principal grande" data-a="onbSig">${L('Continuar', 'Continue')}</button>`;
+  }
+  return `<h1>${L('Recordatorios', 'Reminders')}</h1>
+    <div class="tarjeta">${bloqueRecordatorios()}</div>
+    <button class="btn principal grande" data-a="onbFinalizar">${L('Crear mi objetivo', 'Create my goal')}</button>`;
+}
+
+function bloqueRecordatorios() {
+  const a = S.ajustes;
+  return `<p class="peq suave">${L('Una web no puede programar notificaciones con la app cerrada. En su lugar puedes añadir a tu calendario dos avisos diarios con alarma.',
+      'A web page cannot schedule notifications while closed. Instead you can add two daily alerts with an alarm to your calendar.')}</p>
+    <div class="fila"><div class="crece"><label for="r-1">${L('Recordatorio diario', 'Daily reminder')}</label><input type="time" id="r-1" data-c="horaPrincipal" value="${a.horaPrincipal}"></div>
+    <div class="crece"><label for="r-2">${L('Último aviso (noche)', 'Last call (evening)')}</label><input type="time" id="r-2" data-c="horaNoche" value="${a.horaNoche}" ${a.nocheActiva ? '' : 'disabled'}></div></div>
+    <label style="font-weight:400"><input type="checkbox" data-c="nocheActiva" ${a.nocheActiva ? 'checked' : ''}> ${L('Incluir el aviso nocturno', 'Include the evening alert')}</label>
+    <p><button class="btn" data-a="descargarICS">📅 ${L('Añadir avisos al calendario', 'Add alerts to calendar')}</button></p>`;
+}
+
+function vistaInicio() {
+  const e = racha(), b = bloqueo(), h = hoy(), et = Logica.etapaVisible(e), nombres = NOMBRES_ETAPA();
+  const restantes = Math.max(0, Logica.diasEntre(h, S.objetivo.finClave));
+  const sig = Logica.diasParaSiguienteEtapa(e.rachaActual), riesgo = Logica.riesgoSiFallaHoy(e);
+  let avisos = '';
+  if (b.tipo === 'pendiente') avisos += S.ampliar
+    ? `<div class="tarjeta aviso"><h2>${L('Amplía el plazo', 'Extend the deadline')}</h2><p class="peq suave">${L('Las fotos siguen bloqueadas hasta la nueva fecha.', 'Photos stay locked until the new date.')}</p>
+       <input type="date" id="amp-fin" min="${inputDeClave(Logica.sumar(h, 1))}" value="${inputDeClave(Logica.sumar(h, 28))}">
+       <p class="fila"><button class="btn principal crece" data-a="ampliarConfirmar">${L('Guardar nueva fecha', 'Save new date')}</button><button class="btn" data-a="ampliarCancelar">${L('Volver', 'Back')}</button></p></div>`
+    : `<div class="tarjeta aviso verde"><h2>🎯 ${L('Ha llegado la fecha de tu objetivo', 'Your goal date has arrived')}</h2>
+       <p>${L('¿Has cumplido tu objetivo?', 'Did you reach your goal?')}${S.objetivo.texto ? ` <i>“${esc(S.objetivo.texto)}”</i>` : ''}</p>
+       <p class="fila"><button class="btn principal crece" data-a="objetivoSi">${L('Sí, ver mis fotos', 'Yes, show my photos')}</button><button class="btn crece" data-a="objetivoNo">${L('Todavía no', 'Not yet')}</button></p></div>`;
+  if (b.tipo === 'espera' || b.tipo === 'lista') avisos += `<div class="tarjeta aviso rojo peq">${b.tipo === 'lista'
+      ? L('La espera del desbloqueo de emergencia ha terminado.', 'The emergency unlock wait is over.')
+      : L('Desbloqueo de emergencia en espera hasta el ', 'Emergency unlock waiting until ') + new Date(b.disponibleEl).toLocaleString(locale(), { dateStyle: 'medium', timeStyle: 'short' }) + '.'}
+      <button class="btn enlace" data-a="ir" data-v="emergencia">${L('Ver', 'View')}</button></div>`;
+  if (e.penalizacionEtapas > 0) avisos += `<div class="tarjeta aviso peq">${L(`${REGLAS.nombreMascota} ha bajado ${e.penalizacionEtapas} etapa(s) por un día sin foto. Con ${REGLAS.diasSeguidosParaRecuperarEtapa} días seguidos la recupera.`,
+      `${REGLAS.nombreMascota} dropped ${e.penalizacionEtapas} stage(s) after a missed day. ${REGLAS.diasSeguidosParaRecuperarEtapa} days in a row win it back.`)}</div>`;
+  if (riesgo === 'pierdeRacha') avisos += `<div class="tarjeta aviso rojo peq">⚠️ ${L(`Ayer no hubo foto. Si hoy tampoco, tu racha de ${e.rachaActual} días vuelve a cero.`, `No photo yesterday. Miss today too and your ${e.rachaActual}-day streak resets.`)}</div>`;
+  // Día de gracia: hoy (si no hay foto) o ayer (si faltó)
+  const ayer = Logica.sumar(h, -1); let gracia = '';
+  const hayHistorial = S.fotos.length > 0 && Math.min(...S.fotos) < h;
+  if (hayHistorial && Logica.puedeUsarGracia(ayer, S.fotos, S.gracias, h) && Math.min(...S.fotos) < ayer)
+    gracia += `<button class="btn enlace" data-a="gracia" data-d="${ayer}">🛟 ${L('Usar día de gracia para ayer', 'Use grace day for yesterday')}</button>`;
+  if (S.fotos.length > 0 && Logica.puedeUsarGracia(h, S.fotos, S.gracias, h))
+    gracia += `<button class="btn enlace" data-a="gracia" data-d="${h}">🛟 ${L('Hoy no puedo: usar día de gracia', "Can't today: use grace day")}</button>`;
+  if (e.graciaHoy) gracia = `<p class="peq suave centro">🛟 ${L('Hoy está cubierto con tu día de gracia. Aun así puedes hacer la foto.', 'Today is covered by your grace day. You can still take the photo.')}</p>`;
+
+  return `<div class="inicio-cols"><div>
+      ${mascota(et)}
+      <p class="centro" style="margin:.2rem 0 .8rem"><b>${REGLAS.nombreMascota}</b> · ${nombres[et]}
+      ${sig !== null ? `<br><span class="peq suave">${L(`Faltan ${sig} día(s) de racha para “${nombres[Logica.etapaBase(e.rachaActual) + 1]}”`, `${sig} more streak day(s) to “${nombres[Logica.etapaBase(e.rachaActual) + 1]}”`)}</span>` : ''}</p>
+    </div><div>
+      <div class="stats">
+        <div class="stat"><b>🔥 ${e.rachaActual}</b><span>${L('Racha actual', 'Current streak')}</span></div>
+        <div class="stat"><b>${e.mejorRacha}</b><span>${L('Mejor racha', 'Best streak')}</span></div>
+        <div class="stat"><b>${restantes}</b><span>${L('Días restantes', 'Days left')}</span></div>
+      </div>
+      ${S.objetivo.texto ? `<p class="peq suave centro">🎯 ${esc(S.objetivo.texto)} · ${fmt(S.objetivo.finClave)}</p>` : `<p class="peq suave centro">🎯 ${fmt(S.objetivo.finClave)}</p>`}
+      ${avisos}
+      <p><button class="btn grande ${e.hechoHoy ? 'hecho' : 'principal'}" data-a="${e.hechoHoy ? 'repetirFoto' : 'abrirCamara'}">
+        ${e.hechoHoy ? L('Hecho hoy ✓', 'Done today ✓') : '📸 ' + L('Hacer foto de hoy', "Take today's photo")}</button></p>
+      ${e.hechoHoy ? `<p class="peq suave centro">${L('Toca el botón si quieres repetirla: sustituye a la de hoy.', "Tap the button to retake it: it replaces today's.")}</p>` : ''}
+      <div class="centro">${gracia}</div>
+      ${b.desbloqueado ? '' : `<p class="peq suave centro">🔒 ${S.fotos.length} ${L('foto(s) guardadas y bloqueadas', 'photo(s) saved and locked')}</p>`}
+    </div></div>`;
+}
+
+function vistaCalendario() {
+  const h = hoy(); if (!S.cal) S.cal = { y: Math.floor(h / 10000), m: Math.floor(h / 100) % 100 };
+  const { y, m } = S.cal, primero = y * 10000 + m * 100 + 1, diasMes = new Date(y, m, 0).getDate();
+  const F = new Set(S.fotos), G = new Set(S.gracias), inicio = S.fotos.length ? Math.min(...S.fotos, ...S.gracias) : null;
+  const cab = [...Array(7)].map((_, i) => new Date(2024, 0, 1 + i).toLocaleDateString(locale(), { weekday: 'narrow' }));
+  let celdas = cab.map(c => `<div class="cab">${c}</div>`).join('') + '<div></div>'.repeat(Logica.diaSemanaLunes0(primero));
+  let hechos = 0;
+  for (let d = 1; d <= diasMes; d++) {
+    const c = y * 10000 + m * 100 + d; let cl = '', marca = '', etq = '';
+    if (F.has(c)) { cl = 'hecho'; marca = '✓'; hechos++; etq = L('cumplido', 'done'); }
+    else if (G.has(c)) { cl = 'gracia'; marca = '🛟'; etq = L('día de gracia', 'grace day'); }
+    else if (inicio !== null && c > inicio && c < h) { cl = 'fallo'; marca = '·'; etq = L('sin foto', 'missed'); }
+    if (c === h) cl += ' hoy'; if (c === S.objetivo.finClave) cl += ' fin';
+    celdas += `<div class="dia ${cl}" aria-label="${d} ${etq}">${d}<small>${marca}</small></div>`;
+  }
+  return `<h1>${L('Calendario', 'Calendar')}</h1>
+    <div class="tarjeta"><div class="fila" style="justify-content:space-between"><button class="btn" data-a="calMes" data-n="-1" aria-label="${L('Mes anterior', 'Previous month')}">‹</button>
+      <b style="text-transform:capitalize">${new Date(y, m - 1, 1).toLocaleDateString(locale(), { month: 'long', year: 'numeric' })}</b>
+      <button class="btn" data-a="calMes" data-n="1" aria-label="${L('Mes siguiente', 'Next month')}">›</button></div>
+      <div class="cal" style="margin-top:.8rem">${celdas}</div></div>
+    <p class="peq suave">✓ ${L('día cumplido', 'day done')} · 🛟 ${L('día de gracia', 'grace day')} · <span class="mal">·</span> ${L('sin foto', 'missed')} · ▢ ${L('hoy', 'today')} · ┄ ${L('fin del objetivo', 'goal end')}</p>
+    <p class="peq suave">${L(`Este mes: ${hechos} día(s) cumplidos.`, `This month: ${hechos} day(s) done.`)} ${L('Aquí nunca se muestran fotos.', 'Photos are never shown here.')}</p>`;
+}
+
+function vistaGaleria() {
+  const g = S.gal, claves = [...S.fotos].sort((a, b) => a - b);
+  if (!g.urls) { cargarGaleria(); return `<h1>${L('Galería', 'Gallery')}</h1><p class="suave">${L('Descifrando tus fotos…', 'Decrypting your photos…')}</p>`; }
+  if (!claves.length) return `<h1>${L('Galería', 'Gallery')}</h1><p class="suave">${L('No hay fotos todavía.', 'No photos yet.')}</p>`;
+  const modos = [['rejilla', L('Todas', 'All')], ['linea', L('Línea de tiempo', 'Timeline')], ['comparar', L('Antes / después', 'Before / after')]];
+  let cuerpo = '';
+  if (g.modo === 'rejilla') cuerpo = `<div class="rejilla">${claves.map((c, i) => `<figure data-a="galAbrir" data-i="${i}"><img src="${g.urls.get(c) || ''}" alt="${fmt(c)}" loading="lazy"><figcaption>${fmt(c, { day: 'numeric', month: 'short' })}</figcaption></figure>`).join('')}</div>`;
+  else if (g.modo === 'linea') {
+    g.i = Math.max(0, Math.min(claves.length - 1, g.i)); const c = claves[g.i];
+    cuerpo = `<div class="visor"><img id="gal-img" src="${g.urls.get(c) || ''}" alt="${fmt(c)}"></div>
+      <p class="centro"><b id="gal-fecha">${fmt(c)}</b> <span class="suave peq" id="gal-n">· ${L('día', 'day')} ${Logica.diasEntre(claves[0], c) + 1} · ${g.i + 1}/${claves.length}</span></p>
+      <input type="range" min="0" max="${claves.length - 1}" value="${g.i}" data-c="galIndice" aria-label="${L('Línea de tiempo', 'Timeline')}">
+      <p class="fila"><button class="btn crece" data-a="galPaso" data-n="-1">‹ ${L('Anterior', 'Previous')}</button><button class="btn crece" data-a="galPaso" data-n="1">${L('Siguiente', 'Next')} ›</button></p>`;
+  } else {
+    const a = claves[0], z = claves[claves.length - 1];
+    cuerpo = `<div class="visor"><img src="${g.urls.get(z) || ''}" alt="${L('Después', 'After')}">
+        <img id="gal-antes" src="${g.urls.get(a) || ''}" alt="${L('Antes', 'Before')}" style="clip-path:inset(0 ${100 - g.corte}% 0 0)">
+        <div class="linea" id="gal-linea" style="left:${g.corte}%"></div>
+        <span class="etq" style="left:.5rem">${L('Antes', 'Before')} · ${fmt(a, { day: 'numeric', month: 'short' })}</span>
+        <span class="etq" style="right:.5rem">${L('Después', 'After')} · ${fmt(z, { day: 'numeric', month: 'short' })}</span></div>
+      <input type="range" min="0" max="100" value="${g.corte}" data-c="galCorte" aria-label="${L('Comparar antes y después', 'Compare before and after')}">
+      <p class="peq suave centro">${L(`${Logica.diasEntre(a, z)} días entre la primera y la última foto.`, `${Logica.diasEntre(a, z)} days between the first and last photo.`)}</p>`;
+  }
+  return `<h1>${L('Galería', 'Gallery')}</h1><div class="fila" style="margin-bottom:.8rem">${modos.map(([m, t]) => `<button class="btn ${g.modo === m ? 'principal' : ''}" data-a="galModo" data-m="${m}">${t}</button>`).join('')}</div>${cuerpo}`;
+}
+async function cargarGaleria() {
+  const urls = new Map();
+  for (const c of S.fotos) { try { const blob = await BD.leerFoto(c); if (blob) urls.set(c, URL.createObjectURL(blob)); } catch (e) { /* bloqueado o dañado */ } }
+  S.gal.urls = urls; if (S.vista === 'galeria') pintar();
+}
+function soltarGaleria() { if (S.gal.urls) { S.gal.urls.forEach(u => URL.revokeObjectURL(u)); S.gal.urls = null; } }
+
+function vistaAjustes() {
+  const o = S.objetivo, b = bloqueo();
+  const nombresEv = { foto: L('Foto', 'Photo'), objetivo: L('Objetivo', 'Goal'), plazo: L('Plazo', 'Deadline'), gracia: L('Día de gracia', 'Grace day'),
+    emergencia: L('Emergencia', 'Emergency'), desbloqueo: L('Desbloqueo', 'Unlock') };
+  const registro = [...S.auditoria].reverse().filter(x => x.tipo !== 'foto').slice(0, 40)
+    .map(x => `<tr><td>${new Date(x.t).toLocaleString(locale(), { dateStyle: 'short', timeStyle: 'short' })}</td><td><b>${nombresEv[x.tipo] || esc(x.tipo)}</b> ${esc(x.detalle)}</td></tr>`).join('');
+  return `<h1>${L('Ajustes', 'Settings')}</h1>
+    <div class="tarjeta"><h2>🎯 ${L('Objetivo', 'Goal')}</h2>
+      <label for="a-txt">${L('Texto', 'Text')}</label><input type="text" id="a-txt" maxlength="120" value="${esc(o.texto || '')}">
+      <label for="a-fin">${L('Fecha de fin', 'End date')}</label><input type="date" id="a-fin" min="${inputDeClave(o.finClave)}" value="${inputDeClave(o.finClave)}" ${b.desbloqueado ? 'disabled' : ''}>
+      <p class="peq suave">${L('La fecha solo se puede ampliar, y el cambio queda anotado en el registro.', 'The date can only be extended, and the change is written to the log.')}</p>
+      <button class="btn" data-a="guardarObjetivo">${L('Guardar objetivo', 'Save goal')}</button></div>
+    <div class="tarjeta"><h2>🔔 ${L('Recordatorios', 'Reminders')}</h2>${bloqueRecordatorios()}</div>
+    <div class="tarjeta"><h2>🌐 ${L('Idioma', 'Language')}</h2>
+      <select data-c="idioma" aria-label="${L('Idioma', 'Language')}"><option value="es" ${S.ajustes.idioma === 'es' ? 'selected' : ''}>Español</option><option value="en" ${S.ajustes.idioma === 'en' ? 'selected' : ''}>English</option></select></div>
+    <div class="tarjeta"><h2>📊 ${L('Estadísticas', 'Statistics')}</h2><p class="peq suave">${L('Exporta solo números y fechas. Nunca las fotos.', 'Exports numbers and dates only. Never the photos.')}</p>
+      <button class="btn" data-a="exportar">${L('Exportar estadísticas (CSV)', 'Export statistics (CSV)')}</button></div>
+    <div class="tarjeta"><h2>🔒 ${L('Fotos', 'Photos')}</h2>
+      <p class="peq">${b.desbloqueado ? L('Tus fotos están desbloqueadas.', 'Your photos are unlocked.') : L(`${S.fotos.length} foto(s) bloqueadas hasta el ${fmt(o.finClave)}.`, `${S.fotos.length} photo(s) locked until ${fmt(o.finClave)}.`)}</p>
+      ${b.desbloqueado ? '' : `<button class="btn peligro" data-a="ir" data-v="emergencia">${L('Desbloqueo de emergencia', 'Emergency unlock')}</button>`}
+      <details style="margin-top:.8rem"><summary class="peq">${L('Qué protege y qué no este bloqueo', 'What this lock does and does not protect')}</summary><div class="peq suave">
+      <p>${L('Las fotos se guardan cifradas dentro del almacenamiento de este navegador en tu dispositivo. No se suben a GitHub ni a ningún servidor.', 'Photos are stored encrypted inside this browser’s storage on your device. They are never uploaded to GitHub or any server.')}</p>
+      <p>${L('Es un bloqueo de compromiso, no de seguridad: cambiar la fecha del dispositivo adelanta la espera y la fecha del objetivo; y con un ordenador y herramientas de desarrollo se pueden extraer. Borrar los datos de Safari o quitar el icono de la pantalla de inicio <b>elimina las fotos para siempre</b>.',
+            'It is a commitment lock, not a security one: changing the device date skips the wait and the goal date; and with a computer and developer tools the photos can be extracted. Clearing Safari data or removing the Home Screen icon <b>deletes the photos forever</b>.')}</p></div></details></div>
+    <div class="tarjeta"><h2>🧾 ${L('Registro', 'Log')}</h2>${registro ? `<table>${registro}</table>` : `<p class="peq suave">${L('Sin eventos todavía.', 'No events yet.')}</p>`}</div>
+    <div class="tarjeta"><h2>${L('Zona peligrosa', 'Danger zone')}</h2><button class="btn peligro" data-a="reiniciar">${L('Reiniciar todo', 'Reset everything')}</button></div>
+    <p class="peq suave centro"><a href="#tests" data-a="verPruebas">${L('Ejecutar pruebas internas', 'Run internal tests')}</a></p>`;
+}
+
+function vistaEmergencia() {
+  const b = bloqueo(), R = REGLAS.emergencia, frase = L(R.fraseES, R.fraseEN), p = S.emg.paso;
+  const cab = `<p><button class="btn enlace" data-a="ir" data-v="ajustes">‹ ${L('Ajustes', 'Settings')}</button></p><h1>${L('Desbloqueo de emergencia', 'Emergency unlock')}</h1>`;
+  if (b.desbloqueado) return cab + `<p>${L('Las fotos ya están desbloqueadas.', 'Photos are already unlocked.')}</p>`;
+  if (b.tipo === 'pendiente') return cab + `<p>${L('Ya ha llegado la fecha del objetivo: responde en Inicio.', 'The goal date has arrived: answer on Home.')}</p>`;
+  if (b.tipo === 'espera') return cab + `<div class="tarjeta aviso rojo"><p>${L('Solicitud registrada. Podrás desbloquear a partir del', 'Request logged. You can unlock from')}<br><b>${new Date(b.disponibleEl).toLocaleString(locale(), { dateStyle: 'full', timeStyle: 'short' })}</b></p>
+      <p class="peq suave">${L('Tienes hasta entonces para pensarlo. Cancelar no deja rastro en las fotos, pero sí en el registro.', 'You have until then to think it over. Cancelling is also written to the log.')}</p>
+      <button class="btn principal" data-a="emgCancelar">${L('Cancelar y seguir con mi objetivo', 'Cancel and keep going')}</button></div>${mascota(0)}`;
+  if (b.tipo === 'lista') return cab + `<div class="tarjeta aviso rojo"><p>${L('La espera ha terminado. Si desbloqueas, verás todas tus fotos y quedará registrado.', 'The wait is over. If you unlock, you will see all your photos and it will be logged.')}</p>
+      <p class="fila"><button class="btn principal crece" data-a="emgCancelar">${L('Mejor no: sigo con mi objetivo', "Better not: I'll keep going")}</button>
+      <button class="btn peligro crece" data-a="emgConfirmar">${L('Desbloquear ahora', 'Unlock now')}</button></p></div>`;
+  if (p === 2) return cab + `<div class="tarjeta"><p>${L('Paso 2 de 3. Escribe exactamente esta frase:', 'Step 2 of 3. Type exactly this sentence:')}</p><p><b>${esc(frase)}</b></p>
+      <input type="text" id="emg-frase" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="${L('Frase de confirmación', 'Confirmation sentence')}">
+      <p class="peq suave">${L(`Paso 3: después empieza una espera de ${R.horasDeEspera} horas.`, `Step 3: then a ${R.horasDeEspera}-hour wait starts.`)}</p>
+      <p class="fila"><button class="btn principal crece" data-a="ir" data-v="inicio">${L('Cancelar', 'Cancel')}</button><button class="btn peligro crece" data-a="emgSolicitar">${L('Iniciar la espera', 'Start the wait')}</button></p></div>`;
+  return cab + `<div class="tarjeta"><p>${L('Esto existe para una urgencia real. Está hecho para que cueste:', 'This exists for a real emergency. It is hard on purpose:')}</p>
+      <ol class="peq"><li>${L(`Mantén pulsado el botón ${R.segundosPulsacion} segundos.`, `Hold the button for ${R.segundosPulsacion} seconds.`)}</li><li>${L('Escribe una frase de confirmación.', 'Type a confirmation sentence.')}</li>
+      <li>${L(`Espera ${R.horasDeEspera} horas y confirma de nuevo.`, `Wait ${R.horasDeEspera} hours and confirm again.`)}</li></ol>
+      <p class="peq suave">${L('Todo queda anotado en el registro.', 'Everything is written to the log.')}</p>
+      <button class="btn peligro grande" id="pulsar"><i></i><span>${L('Mantén pulsado', 'Press and hold')}</span></button></div>${mascota(0)}`;
+}
+
+// ---------------------------------------------------------------------
+//  Cámara (getUserMedia). La foto se captura en un lienzo que NUNCA se muestra.
+// ---------------------------------------------------------------------
+const Cam = {
+  stream: null, contando: false, cancelar: false,
+  async abrir() {
+    $('camara').classList.add('visible'); this.refrescarBotones(); this.mensaje('');
+    if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) return this.sinCamara(L('Este navegador no da acceso directo a la cámara (hace falta HTTPS).', 'This browser gives no direct camera access (HTTPS is required).'));
+    await this.iniciar();
+  },
+  async iniciar() {
+    this.parar();
+    try {
+      this.stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: S.ajustes.camara, width: { ideal: 1920 }, height: { ideal: 1080 } } });
+      const v = $('cam-video'); v.srcObject = this.stream; v.classList.toggle('espejo', S.ajustes.camara === 'user');
+      await v.play().catch(() => {});
+      $('cam-disparo').disabled = false;
+    } catch (err) {
+      const denegado = err && (err.name === 'NotAllowedError' || err.name === 'SecurityError');
+      this.sinCamara(denegado
+        ? L('No hay permiso de cámara. En el iPhone: Ajustes → Apps → Safari → Cámara → Permitir (o Ajustes → Safari → Cámara). Después vuelve a abrir la app.',
+            'No camera permission. On iPhone: Settings → Apps → Safari → Camera → Allow (or Settings → Safari → Camera). Then reopen the app.')
+        : L('No se ha podido abrir la cámara.', 'The camera could not be opened.'));
+    }
+  },
+  sinCamara(texto) {
+    $('cam-disparo').disabled = true;
+    this.mensaje(`<p>${texto}</p><button class="cbtn" data-a="camReintentar">${L('Reintentar', 'Retry')}</button>
+      <button class="cbtn" data-a="camSistema">${L('Usar la cámara del sistema', 'Use the system camera')}</button>
+      <p style="font-size:.8rem;opacity:.7">${L('Aviso: la cámara del sistema te enseña la foto un instante para aceptarla.', 'Note: the system camera shows you the photo briefly so you can accept it.')}</p>`);
+  },
+  mensaje(html) { const m = $('cam-msg'); m.innerHTML = html; m.style.display = html ? 'flex' : 'none'; },
+  parar() { if (this.stream) { this.stream.getTracks().forEach(t => t.stop()); this.stream = null; } $('cam-video').srcObject = null; },
+  cerrar() { this.cancelar = true; this.contando = false; $('cam-cuenta').textContent = ''; this.parar(); $('camara').classList.remove('visible'); },
+  refrescarBotones() {
+    const a = S.ajustes;
+    $('cam-temp').textContent = `⏱ ${a.temporizador}s`; $('cam-temp').classList.toggle('on', a.temporizador > 0);
+    $('cam-cuad').classList.toggle('on', a.cuadricula); $('cam-sil').classList.toggle('on', a.silueta);
+    $('cam-rejilla').style.display = a.cuadricula ? '' : 'none'; $('cam-silueta').style.display = a.silueta ? '' : 'none';
+    $('cam-cerrar').setAttribute('aria-label', L('Cerrar', 'Close')); $('cam-temp').setAttribute('aria-label', L('Temporizador', 'Timer'));
+    $('cam-cuad').setAttribute('aria-label', L('Cuadrícula', 'Grid')); $('cam-sil').setAttribute('aria-label', L('Silueta guía', 'Guide silhouette'));
+    $('cam-girar').setAttribute('aria-label', L('Cambiar de cámara', 'Switch camera'));
+  },
+  async disparar() {
+    if (this.contando || !this.stream) return;
+    this.contando = true; this.cancelar = false; $('cam-disparo').disabled = true;
+    for (let n = S.ajustes.temporizador; n > 0; n--) {
+      $('cam-cuenta').textContent = n; await new Promise(r => setTimeout(r, 1000));
+      if (this.cancelar) return;
+    }
+    $('cam-cuenta').textContent = '';
+    try {
+      const v = $('cam-video'); if (!v.videoWidth) throw new Error('sin imagen');
+      const lienzo = document.createElement('canvas'); lienzo.width = v.videoWidth; lienzo.height = v.videoHeight;
+      lienzo.getContext('2d').drawImage(v, 0, 0);
+      const blob = await new Promise(r => lienzo.toBlob(r, 'image/jpeg', REGLAS.calidadJPEG));
+      lienzo.width = lienzo.height = 0;
+      if (!blob) throw new Error('sin datos');
+      await registrarFoto(blob);
+    } catch (err) {
+      this.contando = false; $('cam-disparo').disabled = false;
+      alert(L('No se ha podido guardar la foto: ', 'The photo could not be saved: ') + (err.message || err));
+      return;
+    }
+    this.contando = false; this.cerrar();
+  }
+};
+
+async function registrarFoto(blob) {
+  const h = hoy(), repetida = S.fotos.includes(h), etapaAntes = Logica.etapaVisible(racha());
+  await BD.guardarFoto(h, blob);
+  if (!repetida) S.fotos.push(h);
+  auditar('foto', String(h)); await guardar();
+  const e = racha(), et = Logica.etapaVisible(e), sube = et > etapaAntes;
+  $('fiesta').innerHTML = `${mascota(et, 'salta')}
+    <h1>${sube ? L('¡Brote ha evolucionado!', 'Brote evolved!') : repetida ? L('¡Foto actualizada!', 'Photo updated!') : L('¡Hecho!', 'Done!')}</h1>
+    <p>${sube ? `${L('Nueva etapa', 'New stage')}: <b>${NOMBRES_ETAPA()[et]}</b><br>` : ''}🔥 ${L(`Racha de ${e.rachaActual} día(s)`, `${e.rachaActual}-day streak`)}</p>
+    <p class="suave peq">🔒 ${L('Foto guardada. La verás cuando cumplas tu objetivo.', 'Photo saved. You will see it when you reach your goal.')}</p>
+    <button class="btn principal grande" style="max-width:20rem" data-a="fiestaCerrar">${L('Seguir', 'Continue')}</button>`;
+  $('fiesta').classList.add('visible');
+  soltarGaleria(); pintar();
+}
+
+// ---------------------------------------------------------------------
+//  Exportaciones: calendario (.ics) y estadísticas (.csv)
+// ---------------------------------------------------------------------
+async function compartirArchivo(nombre, tipo, texto) {
+  const archivo = new File([texto], nombre, { type: tipo });
+  if (navigator.canShare && navigator.canShare({ files: [archivo] })) { try { await navigator.share({ files: [archivo] }); return; } catch (e) { if (e.name === 'AbortError') return; } }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(archivo); a.download = nombre; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 30000);
+}
+function generarICS() {
+  const a = S.ajustes, desde = String(hoy()), hasta = String((S.objetivo && S.objetivo.finClave) || S.onb.fin || Logica.sumar(hoy(), REGLAS.semanasPorDefecto * 7));
+  const sello = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z';
+  const evento = (uid, hora, titulo, nota) => ['BEGIN:VEVENT', `UID:${uid}@progreso-app`, `DTSTAMP:${sello}`, `DTSTART:${desde}T${hora.replace(':', '')}00`, 'DURATION:PT5M',
+    `RRULE:FREQ=DAILY;UNTIL=${hasta}T235959`, `SUMMARY:${titulo}`, `DESCRIPTION:${nota}`, 'BEGIN:VALARM', 'ACTION:DISPLAY', `DESCRIPTION:${titulo}`, 'TRIGGER:PT0M', 'END:VALARM', 'END:VEVENT'];
+  let l = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Progreso//ES', 'CALSCALE:GREGORIAN',
+    ...evento('principal', a.horaPrincipal, L(`📸 ¡${REGLAS.nombreMascota} te espera! Foto de hoy`, `📸 ${REGLAS.nombreMascota} is waiting! Today's photo`), L('Una foto y listo.', 'One photo and done.'))];
+  if (a.nocheActiva) l = l.concat(evento('noche', a.horaNoche, L(`⚠️ Último aviso: sin foto, ${REGLAS.nombreMascota} baja de etapa o pierdes la racha`, `⚠️ Last call: no photo and ${REGLAS.nombreMascota} drops a stage or the streak is lost`), L('Si ya la has hecho, ignora este aviso.', 'If you already did it, ignore this alert.')));
+  return l.concat('END:VCALENDAR').join('\r\n');
+}
+function generarCSV() {
+  const e = racha(), o = S.objetivo, f = c => inputDeClave(c), filas = [['campo', 'valor'],
+    ['objetivo', (o.texto || '').replace(/[",\n]/g, ' ')], ['fecha_inicio', f(o.inicioClave)], ['fecha_fin', f(o.finClave)], ['objetivo_cumplido', o.cumplido ? 'si' : 'no'],
+    ['racha_actual', e.rachaActual], ['mejor_racha', e.mejorRacha], ['total_dias_con_foto', e.totalFotos], ['dias_de_gracia_usados', S.gracias.length],
+    ['etapa_mascota', Logica.etapaVisible(e)], [], ['fecha', 'estado']];
+  [...S.fotos].sort().forEach(c => filas.push([f(c), 'foto'])); [...S.gracias].sort().forEach(c => filas.push([f(c), 'gracia']));
+  return filas.map(r => r.join(',')).join('\n');
+}
+
+// ---------------------------------------------------------------------
+//  Acciones (delegación de eventos con data-a / data-c)
+// ---------------------------------------------------------------------
+const A = {
+  ir(el) { if (S.vista === 'galeria' && el.dataset.v !== 'galeria') soltarGaleria(); S.vista = el.dataset.v; S.emg.paso = 0; pintar(); window.scrollTo(0, 0); },
+  async idiomaAlternar() { S.ajustes.idioma = S.ajustes.idioma === 'es' ? 'en' : 'es'; await BD.set('ajustes', S.ajustes); pintar(); },
+  onbSig() {
+    if (S.onb.paso === 2) { const v = $('o-fin').value; if (!v || claveDeInput(v) <= hoy()) return alert(L('Elige una fecha futura.', 'Pick a future date.')); S.onb.fin = claveDeInput(v); S.onb.texto = $('o-txt').value.trim(); }
+    S.onb.paso++; pintar(); window.scrollTo(0, 0);
+  },
+  async onbFinalizar() {
+    S.objetivo = { inicioClave: hoy(), finClave: S.onb.fin, texto: S.onb.texto || '', cumplido: false, solicitudEmergencia: null, emergenciaConfirmada: false };
+    auditar('objetivo', L('creado hasta ', 'created until ') + inputDeClave(S.onb.fin)); await guardar();
+    if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+    S.vista = 'inicio'; pintar();
+  },
+  abrirCamara() { Cam.abrir(); },
+  repetirFoto() { if (confirm(L('¿Repetir la foto de hoy? Sustituirá a la anterior.', "Retake today's photo? It will replace the previous one."))) Cam.abrir(); },
+  camCerrar() { Cam.cerrar(); },
+  camReintentar() { Cam.mensaje(''); Cam.iniciar(); },
+  camSistema() { $('cam-archivo').click(); },
+  camDisparar() { Cam.disparar(); },
+  async camGirar() { S.ajustes.camara = S.ajustes.camara === 'user' ? 'environment' : 'user'; BD.set('ajustes', S.ajustes); await Cam.iniciar(); },
+  camTemporizador() { const t = REGLAS.temporizadores; S.ajustes.temporizador = t[(t.indexOf(S.ajustes.temporizador) + 1) % t.length]; BD.set('ajustes', S.ajustes); Cam.refrescarBotones(); },
+  camCuadricula() { S.ajustes.cuadricula = !S.ajustes.cuadricula; BD.set('ajustes', S.ajustes); Cam.refrescarBotones(); },
+  camSilueta() { S.ajustes.silueta = !S.ajustes.silueta; BD.set('ajustes', S.ajustes); Cam.refrescarBotones(); },
+  fiestaCerrar() { $('fiesta').classList.remove('visible'); $('fiesta').innerHTML = ''; },
+  async gracia(el) {
+    const d = Number(el.dataset.d);
+    if (!Logica.puedeUsarGracia(d, S.fotos, S.gracias, hoy())) return;
+    if (!confirm(L(`¿Usar tu día de gracia de esta semana para el ${fmt(d)}? Solo hay ${REGLAS.diasDeGraciaPorSemana} por semana.`, `Use this week's grace day for ${fmt(d)}? There is only ${REGLAS.diasDeGraciaPorSemana} per week.`))) return;
+    S.gracias.push(d); auditar('gracia', inputDeClave(d)); await guardar(); pintar();
+  },
+  async objetivoSi() {
+    if (!confirm(L('¿Confirmas que has cumplido tu objetivo? Se desbloquearán todas las fotos.', 'Do you confirm you reached your goal? All photos will unlock.'))) return;
+    S.objetivo.cumplido = true; auditar('desbloqueo', L('objetivo cumplido', 'goal reached')); await guardar(); S.vista = 'galeria'; pintar();
+  },
+  objetivoNo() { S.ampliar = true; pintar(); },
+  ampliarCancelar() { S.ampliar = false; pintar(); },
+  async ampliarConfirmar() {
+    const v = $('amp-fin').value; if (!v || claveDeInput(v) <= hoy()) return alert(L('Elige una fecha futura.', 'Pick a future date.'));
+    S.objetivo.finClave = claveDeInput(v); S.ampliar = false; auditar('plazo', L('ampliado hasta ', 'extended to ') + v); await guardar(); pintar();
+  },
+  async guardarObjetivo() {
+    const v = $('a-fin').value, nueva = v ? claveDeInput(v) : S.objetivo.finClave;
+    // Acortar el plazo sería un atajo para saltarse el bloqueo: solo se permite ampliarlo.
+    if (!bloqueo().desbloqueado && nueva < S.objetivo.finClave) return alert(L('La fecha solo se puede ampliar. Para ver las fotos antes existe el desbloqueo de emergencia.', 'The date can only be extended. To see photos earlier there is the emergency unlock.'));
+    if (nueva !== S.objetivo.finClave) { auditar('plazo', `${inputDeClave(S.objetivo.finClave)} → ${inputDeClave(nueva)}`); S.objetivo.finClave = nueva; }
+    S.objetivo.texto = $('a-txt').value.trim(); await guardar(); pintar(); alert(L('Objetivo guardado.', 'Goal saved.'));
+  },
+  calMes(el) { let { y, m } = S.cal; m += Number(el.dataset.n); if (m < 1) { m = 12; y--; } if (m > 12) { m = 1; y++; } S.cal = { y, m }; pintar(); },
+  galModo(el) { S.gal.modo = el.dataset.m; pintar(); },
+  galAbrir(el) { S.gal.i = Number(el.dataset.i); S.gal.modo = 'linea'; pintar(); window.scrollTo(0, 0); },
+  galPaso(el) { S.gal.i += Number(el.dataset.n); pintar(); },
+  descargarICS() { compartirArchivo('progreso-recordatorios.ics', 'text/calendar', generarICS()); },
+  exportar() { compartirArchivo('progreso-estadisticas.csv', 'text/csv', generarCSV()); },
+  async emgSolicitar() {
+    const R = REGLAS.emergencia;
+    if (!Logica.fraseValida($('emg-frase').value, L(R.fraseES, R.fraseEN))) return alert(L('La frase no coincide.', 'The sentence does not match.'));
+    S.objetivo.solicitudEmergencia = Date.now(); S.emg.paso = 0; auditar('emergencia', L('solicitada', 'requested')); await guardar(); pintar();
+  },
+  async emgCancelar() { S.objetivo.solicitudEmergencia = null; auditar('emergencia', L('cancelada', 'cancelled')); await guardar(); S.vista = 'inicio'; pintar(); },
+  async emgConfirmar() {
+    if (bloqueo().tipo !== 'lista') return;
+    if (!confirm(L('Última confirmación: ¿desbloquear las fotos antes de cumplir el objetivo?', 'Final confirmation: unlock the photos before reaching the goal?'))) return;
+    S.objetivo.emergenciaConfirmada = true; auditar('desbloqueo', L('de emergencia', 'emergency')); await guardar(); S.vista = 'galeria'; pintar();
+  },
+  async reiniciar() {
+    if (!confirm(L('Esto borra el objetivo, la racha y TODAS las fotos para siempre. ¿Continuar?', 'This deletes the goal, the streak and ALL photos forever. Continue?'))) return;
+    if (prompt(L('Escribe BORRAR para confirmar.', 'Type DELETE to confirm.')) !== L('BORRAR', 'DELETE')) return;
+    soltarGaleria(); await BD.borrarTodo(); location.reload();
+  },
+  verPruebas(el, ev) { ev.preventDefault(); location.hash = 'tests'; mostrarPruebas(); }
+};
+const C = {
+  onbSemanas(el) { S.onb.semanas = Number(el.value); S.onb.fin = Logica.sumar(hoy(), S.onb.semanas * 7); S.onb.texto = $('o-txt').value; pintar(); },
+  onbFin(el) { if (el.value) S.onb.fin = claveDeInput(el.value); },
+  onbTexto(el) { S.onb.texto = el.value; },
+  horaPrincipal(el) { if (el.value) { S.ajustes.horaPrincipal = el.value; BD.set('ajustes', S.ajustes); } },
+  horaNoche(el) { if (el.value) { S.ajustes.horaNoche = el.value; BD.set('ajustes', S.ajustes); } },
+  nocheActiva(el) { S.ajustes.nocheActiva = el.checked; BD.set('ajustes', S.ajustes); pintar(); },
+  async idioma(el) { S.ajustes.idioma = el.value; await BD.set('ajustes', S.ajustes); pintar(); },
+  galIndice(el) { // se actualiza sin repintar para que el deslizador sea fluido
+    const claves = [...S.fotos].sort((a, b) => a - b), i = Number(el.value), c = claves[i]; S.gal.i = i;
+    $('gal-img').src = S.gal.urls.get(c) || ''; $('gal-fecha').textContent = fmt(c);
+    $('gal-n').textContent = `· ${L('día', 'day')} ${Logica.diasEntre(claves[0], c) + 1} · ${i + 1}/${claves.length}`;
+  },
+  galCorte(el) { S.gal.corte = Number(el.value); $('gal-antes').style.clipPath = `inset(0 ${100 - S.gal.corte}% 0 0)`; $('gal-linea').style.left = S.gal.corte + '%'; }
+};
+document.addEventListener('click', ev => { const el = ev.target.closest('[data-a]'); if (el && A[el.dataset.a]) A[el.dataset.a](el, ev); });
+['input', 'change'].forEach(t => document.addEventListener(t, ev => {
+  const el = ev.target.closest('[data-c]'); if (!el) return;
+  const soloChange = ['onbSemanas', 'nocheActiva', 'idioma', 'horaPrincipal', 'horaNoche', 'onbFin'].includes(el.dataset.c);
+  if ((t === 'change') === soloChange && C[el.dataset.c]) C[el.dataset.c](el);
+}));
+// Foto desde la cámara del sistema (alternativa si no hay acceso directo)
+$('cam-archivo').addEventListener('change', async ev => {
+  const f = ev.target.files[0]; ev.target.value = ''; if (!f) return;
+  try { await registrarFoto(f); Cam.cerrar(); } catch (e) { alert(L('No se ha podido guardar la foto.', 'The photo could not be saved.')); }
+});
+// Pulsación mantenida del desbloqueo de emergencia
+let pulsacion = null;
+const soltarPulsacion = () => { if (pulsacion) { clearInterval(pulsacion.t); pulsacion = null; const b = $('pulsar'); if (b) { b.querySelector('i').style.width = '0'; b.querySelector('span').textContent = L('Mantén pulsado', 'Press and hold'); } } };
+document.addEventListener('pointerdown', ev => {
+  const b = ev.target.closest('#pulsar'); if (!b) return; ev.preventDefault();
+  const total = REGLAS.emergencia.segundosPulsacion * 1000, inicio = Date.now();
+  pulsacion = { t: setInterval(() => {
+    const p = (Date.now() - inicio) / total;
+    b.querySelector('i').style.width = Math.min(100, p * 100) + '%';
+    b.querySelector('span').textContent = Math.max(0, Math.ceil((total - (Date.now() - inicio)) / 1000)) + ' s';
+    if (p >= 1) { clearInterval(pulsacion.t); pulsacion = null; S.emg.paso = 2; pintar(); }
+  }, 100) };
+});
+['pointerup', 'pointercancel', 'pointerleave'].forEach(t => document.addEventListener(t, soltarPulsacion, true));
+document.addEventListener('contextmenu', ev => { if (ev.target.closest('#pulsar')) ev.preventDefault(); });
+// Al volver a la app (o cambiar de día) se recalcula todo
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { if ($('camara').classList.contains('visible')) Cam.cerrar(); }
+  else if (S.objetivo && !$('fiesta').classList.contains('visible') && !['INPUT', 'SELECT', 'TEXTAREA'].includes((document.activeElement || {}).tagName)) pintar();
+});
+
+// ---------------------------------------------------------------------
+//  Pruebas internas e icono
+// ---------------------------------------------------------------------
+function mostrarPruebas() {
+  const r = ejecutarPruebas(), mal = r.filter(x => !x.ok).length;
+  $('tabs').style.display = 'none';
+  $('app').innerHTML = `<h1>${L('Pruebas internas', 'Internal tests')}</h1><p class="${mal ? 'mal' : 'ok'}"><b>${r.length - mal}/${r.length} ${L('correctas', 'passed')}</b></p>
+    <div class="tarjeta"><table>${r.map(x => `<tr><td class="${x.ok ? 'ok' : 'mal'}">${x.ok ? '✓' : '✗'}</td><td>${esc(x.nombre)}${x.ok ? '' : `<br><span class="mal">${esc(x.error)}</span>`}</td></tr>`).join('')}</table></div>
+    <h2>${L('Etapas de la mascota', 'Pet stages')}</h2><div class="rejilla">${REGLAS.umbralesEtapas.map((u, i) => `<figure>${mascota(i)}<figcaption>${i}. ${NOMBRES_ETAPA()[i]} (${u}+)</figcaption></figure>`).join('')}</div>
+    <p><a class="btn" href="./">${L('Volver a la app', 'Back to the app')}</a></p>`;
+}
+function ponerIcono() { // icono de pantalla de inicio dibujado por código (sin imágenes externas)
+  try {
+    const c = document.createElement('canvas'); c.width = c.height = 180; const x = c.getContext('2d');
+    x.fillStyle = '#101418'; x.fillRect(0, 0, 180, 180);
+    x.fillStyle = '#3ccf80'; x.beginPath(); x.ellipse(90, 104, 50, 54, 0, 0, 7); x.fill();
+    x.fillStyle = '#4caf50'; x.beginPath(); x.ellipse(104, 40, 18, 9, -.5, 0, 7); x.fill(); x.beginPath(); x.ellipse(76, 40, 18, 9, .5, 0, 7); x.fill();
+    x.fillStyle = '#fff'; x.beginPath(); x.ellipse(72, 92, 10, 12, 0, 0, 7); x.ellipse(108, 92, 10, 12, 0, 0, 7); x.fill();
+    x.fillStyle = '#1d2329'; x.beginPath(); x.arc(73, 93, 5, 0, 7); x.arc(107, 93, 5, 0, 7); x.fill();
+    x.strokeStyle = '#1d2329'; x.lineWidth = 4; x.lineCap = 'round'; x.beginPath(); x.moveTo(76, 116); x.quadraticCurveTo(90, 130, 104, 116); x.stroke();
+    const l = document.createElement('link'); l.rel = 'apple-touch-icon'; l.href = c.toDataURL('image/png'); document.head.appendChild(l);
+  } catch (e) { /* sin icono no pasa nada */ }
+}
+
+// ---------------------------------------------------------------------
+//  Arranque
+// ---------------------------------------------------------------------
+(async () => {
+  ponerIcono();
+  if (location.hash === '#tests') return mostrarPruebas();
+  try {
+    await BD.abrir();
+    const [o, g, au, aj, fotos] = await Promise.all([BD.get('objetivo'), BD.get('gracias'), BD.get('auditoria'), BD.get('ajustes'), BD.clavesFotos()]);
+    S.objetivo = o || null; S.gracias = g || []; S.auditoria = au || []; S.fotos = fotos || []; Object.assign(S.ajustes, aj || {});
+    S.onb.fin = Logica.sumar(hoy(), REGLAS.semanasPorDefecto * 7);
+    pintar();
+  } catch (e) {
+    $('app').innerHTML = `<h1>Progreso</h1><p class="mal">${L('No se puede usar el almacenamiento de este navegador (¿navegación privada?). La app necesita guardar datos en el dispositivo.',
+      'This browser’s storage is unavailable (private browsing?). The app needs to store data on the device.')}</p>`;
+  }
+})();
+})();
+</script>
+</body>
+</html>
